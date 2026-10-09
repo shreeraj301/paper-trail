@@ -1,0 +1,17 @@
+node_modules
+dist
+.output
+.vercel
+screenshots
+artifacts
+wall-qa.mjs
+.project_id
+.node_modules.lock
+.grok/preview.pid
+.grok/preview.log
+.grok/status
+.grok/skills
+.grok/references
+.grok/fonts
+AGENTS.md
+AGENTS.project.md
