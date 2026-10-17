@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import { MOODS, poems } from "../../data/poems.ts";
 import {
   boundsOf,
+  clusterPositions,
   curatedPositions,
   frameCamera,
   maxOverlap,
@@ -61,6 +62,17 @@ describe("layout", () => {
     const camera = frameCamera({ x: 0, y: 0, w: 4000, h: 3000 }, { w: 390, h: 800 });
     assert.ok(camera.zoom >= ZOOM_MIN && camera.zoom <= ZOOM_MAX);
     assert.equal(camera.zoom, ZOOM_MIN);
+  });
+
+  it("packs a filtered set into a tighter block", () => {
+    const positions = curatedPositions();
+    const grief = poems.filter((poem) => poem.mood === "Grief");
+    const before = boundsOf(grief, positions);
+    const clustered = clusterPositions(grief, positions, 720);
+    const after = boundsOf(grief, clustered);
+    assert.ok(before && after);
+    assert.ok(after.w < before.w);
+    assert.ok(after.h < before.h + 400);
   });
 });
 

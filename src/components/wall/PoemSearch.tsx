@@ -10,6 +10,7 @@ type Props = {
   onQueryChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
   onPick: (poem: Poem) => void;
+  matchCount: number | null;
 };
 
 export function PoemSearch({
@@ -20,6 +21,7 @@ export function PoemSearch({
   onQueryChange,
   onOpenChange,
   onPick,
+  matchCount,
 }: Props) {
   const listId = useId();
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -96,6 +98,11 @@ export function PoemSearch({
             }
           }}
         />
+        {matchCount !== null ? (
+          <span className="search-count" aria-hidden="true">
+            {matchCount === 1 ? "1 poem" : `${matchCount} poems`}
+          </span>
+        ) : null}
         {query ? (
           <button
             type="button"
@@ -114,7 +121,7 @@ export function PoemSearch({
       {showList ? (
         <div className="search-results" id={listId} role="listbox" aria-label="Search results">
           {results.length === 0 ? (
-            <div className="search-empty" role="status">
+            <div className="search-empty">
               <p>No poems found</p>
               <button type="button" className="text-btn" onClick={() => onQueryChange("")}>
                 Clear search

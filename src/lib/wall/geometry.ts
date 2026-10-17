@@ -165,6 +165,54 @@ export function poemMatchesMood(poem: Poem, mood: Mood | "all"): boolean {
   return mood === "all" || poem.mood === mood;
 }
 
+/** Pack notes into a compact block, keeping their left-to-right, top-to-bottom order. */
+export function clusterPositions(
+  list: Poem[],
+  source: Record<string, Position>,
+  maxRowWidth: number,
+): Record<string, Position> {
+  const ordered = [...list].sort((a, b) => {
+    const pa = source[a.id];
+    const pb = source[b.id];
+    if (!pa || !pb) return a.title.localeCompare(b.title);
+    if (Math.abs(pa.y - pb.y) > 36) return pa.y - pb.y;
+    return pa.x - pb.x;
+  });
+  const next: Record<string, Position> = { ...source };
+  const gap = 28;
+  const originX = 48;
+  const rowWidth = Math.max(maxRowWidth, 280);
+  let x = originX;
+  let y = 40;
+  let rowH = 0;
+  for (const poem of ordered) {
+    const size = paperSize(poem);
+    if (x > originX && x + size.w > originX + rowWidth) {
+      x = originX;
+      y += rowH + gap;
+      rowH = 0;
+    }
+    next[poem.id] = { x, y, rotation: source[poem.id]?.rotation ?? 0 };
+    x += size.w + gap;
+    rowH = Math.max(rowH, size.h);
+  }
+  return next;
+}
+
+/** Move the camera so `bounds` sits in view without changing zoom. */
+export function panKeepingZoom(
+  bounds: Rect,
+  viewport: Size,
+  zoom: number,
+  padTop = 120,
+): Camera {
+  const safeZoom = clamp(zoom, ZOOM_MIN, ZOOM_MAX);
+  const viewW = Math.max(viewport.w - 32, 120);
+  const x = (viewW - bounds.w * safeZoom) / 2 + 16 - bounds.x * safeZoom;
+  const y = padTop - bounds.y * safeZoom;
+  return { zoom: safeZoom, x, y };
+}
+
 function overlapAmount(a: Rect, b: Rect): { x: number; y: number } {
   return {
     x: Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x),

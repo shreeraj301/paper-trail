@@ -2,12 +2,11 @@ import { useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEve
 import { clamp, prefersReducedMotion } from "../../lib/wall/geometry.ts";
 import { getSession, updateSession, useWallSession } from "../../lib/wall/session.ts";
 
-const PLATE_H = 124;
+const PLATE_H = 104;
 
 function plateWidth(vw: number): number {
-  return vw < 400 ? 172 : 214;
+  return vw < 744 ? 148 : 214;
 }
-const DRAG_THRESHOLD = 4;
 
 function topLimit(): number {
   if (typeof window === "undefined") return 88;
@@ -16,22 +15,32 @@ function topLimit(): number {
   return (Number.isFinite(parsed) ? parsed : 72) + 12;
 }
 
+const DRAG_THRESHOLD = 4;
+
+function dockBox(vw: number, vh: number): { x: number; y: number; w: number; h: number } {
+  const dock = document.querySelector(".dock");
+  if (dock instanceof HTMLElement) {
+    const rect = dock.getBoundingClientRect();
+    if (rect.width > 0) return { x: rect.left, y: rect.top, w: rect.width, h: rect.height };
+  }
+  return { x: vw - 12 - 168, y: vh - 12 - 44, w: 168, h: 44 };
+}
+
 function clampPlate(x: number, y: number, vw: number, vh: number): { x: number; y: number } {
-  const dockW = 156;
-  const dockH = 52;
   const margin = 12;
   const width = plateWidth(vw);
+  const dock = dockBox(vw, vh);
   let nextX = clamp(x, margin, Math.max(margin, vw - width - margin));
   let nextY = clamp(y, topLimit(), Math.max(topLimit(), vh - PLATE_H - margin));
-  const dockX = vw - margin - dockW;
-  const dockY = vh - margin - dockH;
   const overlapsDock =
-    nextX < dockX + dockW &&
-    nextX + width > dockX &&
-    nextY < dockY + dockH &&
-    nextY + PLATE_H > dockY;
+    nextX < dock.x + dock.w &&
+    nextX + width > dock.x &&
+    nextY < dock.y + dock.h &&
+    nextY + PLATE_H > dock.y;
   if (overlapsDock) {
-    nextX = clamp(dockX - width - 8, margin, Math.max(margin, vw - width - margin));
+    const above = dock.y - PLATE_H - 8;
+    if (above >= topLimit()) nextY = above;
+    else nextX = clamp(dock.x - width - 8, margin, Math.max(margin, vw - width - margin));
   }
   return { x: nextX, y: nextY };
 }
@@ -42,7 +51,7 @@ function defaultPlate(vw: number, vh: number): { x: number; y: number } {
 
 export function Nameplate() {
   const session = useWallSession();
-  const plateRef = useRef<HTMLDivElement>(null);
+  const restoreRef = useRef<HTMLButtonElement>(null);
   const dragRef = useRef<{
     pointerId: number;
     startX: number;
@@ -63,10 +72,10 @@ export function Nameplate() {
       const next = current.placed
         ? clampPlate(current.x, current.y, window.innerWidth, window.innerHeight)
         : defaultPlate(window.innerWidth, window.innerHeight);
-      if (!current.placed || next.x !== current.x || next.y !== current.y) {
+      if (!current.aside && (!current.placed || next.x !== current.x || next.y !== current.y)) {
         updateSession((sessionState) => ({
           ...sessionState,
-          nameplate: { ...next, placed: true },
+          nameplate: { ...sessionState.nameplate, ...next, placed: true },
         }));
       }
     };
@@ -139,7 +148,10 @@ export function Nameplate() {
       window.innerWidth,
       window.innerHeight,
     );
-    updateSession((current) => ({ ...current, nameplate: { ...next, placed: true } }));
+    updateSession((current) => ({
+      ...current,
+      nameplate: { ...current.nameplate, ...next, placed: true },
+    }));
   };
 
   const onPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -150,37 +162,72 @@ export function Nameplate() {
   };
 
   const placeAside = () => {
-    const next = defaultPlate(window.innerWidth, window.innerHeight);
-    updateSession((current) => ({ ...current, nameplate: { ...next, placed: true } }));
+    updateSession((current) => ({
+      ...current,
+      nameplate: { ...current.nameplate, aside: true, placed: true },
+    }));
     setAngle(0);
+    window.requestAnimationFrame(() => restoreRef.current?.focus());
+  };
+
+  const showPlate = () => {
+    updateSession((current) => ({
+      ...current,
+      nameplate: { ...current.nameplate, aside: false, placed: true },
+    }));
+    window.requestAnimationFrame(() => plateRef.current?.focus());
   };
 
   const nudge = (dx: number, dy: number) => {
     const current = getSession().nameplate;
     const base = current.placed ? current : defaultPlate(window.innerWidth, window.innerHeight);
     const next = clampPlate(base.x + dx, base.y + dy, window.innerWidth, window.innerHeight);
-    updateSession((sessionState) => ({ ...sessionState, nameplate: { ...next, placed: true } }));
+    updateSession((sessionState) => ({
+      ...sessionState,
+      nameplate: { ...sessionState.nameplate, ...next, placed: true },
+    }));
   };
 
   const placed = session.nameplate.placed;
+  const aside = session.nameplate.aside;
+  const plateRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div
-      ref={plateRef}
-      className={placed ? "nameplate is-placed" : "nameplate"}
-      style={
-        placed
-          ? { left: session.nameplate.x, top: session.nameplate.y, transform: `rotate(${angle}deg)` }
-          : { transform: `rotate(${angle}deg)` }
-      }
-      tabIndex={0}
-      role="group"
-      aria-label="Paper Trail nameplate. Drag to move it. Arrow keys nudge it when focused."
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
-      onKeyDown={(event) => {
+    <>
+      {aside ? (
+        <button
+          ref={restoreRef}
+          type="button"
+          className="nameplate-restore"
+          onClick={showPlate}
+        >
+          Show nameplate
+        </button>
+      ) : null}
+      <div
+        ref={plateRef}
+        className={
+          aside ? "nameplate is-placed is-aside" : placed ? "nameplate is-placed" : "nameplate"
+        }
+        style={
+          placed
+            ? {
+                left: aside ? -260 : session.nameplate.x,
+                top: session.nameplate.y,
+                transform: `rotate(${angle}deg)`,
+              }
+            : { transform: `rotate(${angle}deg)` }
+        }
+        tabIndex={aside ? -1 : 0}
+        aria-hidden={aside || undefined}
+        inert={aside || undefined}
+        role="group"
+        aria-label="Paper Trail nameplate. Drag to move it. Arrow keys nudge it when focused."
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onKeyDown={(event) => {
         const step = 16;
         if (event.key === "ArrowLeft") {
           event.preventDefault();
@@ -211,5 +258,6 @@ export function Nameplate() {
         Place aside
       </button>
     </div>
+    </>
   );
 }

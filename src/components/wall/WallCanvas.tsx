@@ -34,6 +34,7 @@ type Props = {
   positions: Record<string, Position>;
   camera: Camera;
   shownIds: Set<string>;
+  matchIds: Set<string> | null;
   selectedId: string | null;
   settling: boolean;
   locked: boolean;
@@ -49,6 +50,7 @@ export function WallCanvas({
   positions,
   camera,
   shownIds,
+  matchIds,
   selectedId,
   settling,
   locked,
@@ -82,13 +84,23 @@ export function WallCanvas({
     if (!element) return;
     const onWheel = (event: WheelEvent) => {
       if (lockedRef.current) return;
-      event.preventDefault();
       const rect = element.getBoundingClientRect();
       const current = cameraRef.current;
-      const factor = Math.exp(-event.deltaY * 0.00115);
-      onCameraRef.current(
-        zoomAt(current, event.clientX - rect.left, event.clientY - rect.top, current.zoom * factor),
-      );
+      if (event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+        const factor = Math.exp(-event.deltaY * 0.00115);
+        onCameraRef.current(
+          zoomAt(current, event.clientX - rect.left, event.clientY - rect.top, current.zoom * factor),
+        );
+        return;
+      }
+      if (event.deltaX === 0 && event.deltaY === 0) return;
+      event.preventDefault();
+      onCameraRef.current({
+        ...current,
+        x: current.x - event.deltaX,
+        y: current.y - event.deltaY,
+      });
     };
     element.addEventListener("wheel", onWheel, { passive: false });
     return () => element.removeEventListener("wheel", onWheel);
@@ -188,12 +200,15 @@ export function WallCanvas({
         {poems.map((poem) => {
           const position = positions[poem.id];
           if (!position) return null;
+          const shown = shownIds.has(poem.id);
+          const matched = matchIds ? matchIds.has(poem.id) : false;
           return (
             <PaperPoem
               key={poem.id}
               poem={poem}
               position={position}
-              shown={shownIds.has(poem.id)}
+              shown={shown}
+              matched={matchIds ? matched : null}
               selected={selectedId === poem.id}
               dragging={draggingId === poem.id}
               onPointerDown={onPaperPointerDown}

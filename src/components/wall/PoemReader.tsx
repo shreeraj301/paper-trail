@@ -63,13 +63,13 @@ export function PoemReader({ poem, onClose }: Props) {
           ))}
         </div>
         <div className="reader-actions">
-          <button type="button" className="secondary-btn" onClick={() => void copyLink()}>
+          <button type="button" className="secondary-btn" aria-label="Copy link" onClick={() => void copyLink()}>
             {copyState === "copied" ? (
               <Check aria-hidden="true" strokeWidth={1.75} />
             ) : (
               <Link aria-hidden="true" strokeWidth={1.75} />
             )}
-            {copyState === "copied" ? "Link copied" : "Copy link"}
+            <span aria-hidden="true">{copyState === "copied" ? "Link copied" : "Copy link"}</span>
           </button>
           {copyState === "failed" ? (
             <p className="copy-fallback" role="status">

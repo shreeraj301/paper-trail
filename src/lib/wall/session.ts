@@ -6,6 +6,7 @@ export type NameplateState = {
   x: number;
   y: number;
   placed: boolean;
+  aside: boolean;
 };
 
 export type WallSession = {
@@ -21,7 +22,7 @@ const initialSession: WallSession = {
   camera: { x: 48, y: 96, zoom: 1 },
   mood: "all",
   framed: false,
-  nameplate: { x: 16, y: 0, placed: false },
+  nameplate: { x: 16, y: 0, placed: false, aside: false },
 };
 
 let session: WallSession = initialSession;
@@ -47,4 +48,18 @@ export function subscribeSession(listener: () => void): () => void {
 
 export function useWallSession(): WallSession {
   return useSyncExternalStore(subscribeSession, getSession, getServerSession);
+}
+
+let pendingFocusId: string | null = null;
+
+export function rememberFocusPoem(id: string): void {
+  pendingFocusId = id;
+}
+
+export function peekFocusPoem(): string | null {
+  return pendingFocusId;
+}
+
+export function clearFocusPoem(): void {
+  pendingFocusId = null;
 }

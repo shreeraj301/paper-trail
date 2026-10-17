@@ -6,6 +6,7 @@ type Props = {
   poem: Poem;
   position: Position;
   shown: boolean;
+  matched: boolean | null;
   selected: boolean;
   dragging: boolean;
   onPointerDown: (event: PointerEvent<HTMLButtonElement>, poemId: string) => void;
@@ -16,6 +17,7 @@ function PaperPoemInner({
   poem,
   position,
   shown,
+  matched,
   selected,
   dragging,
   onPointerDown,
@@ -40,6 +42,8 @@ function PaperPoemInner({
         selected ? "is-selected" : "",
         dragging ? "is-dragging" : "",
         shown ? "" : "is-hidden",
+        matched === true ? "is-match" : "",
+        matched === false && shown ? "is-dim" : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -49,9 +53,15 @@ function PaperPoemInner({
       aria-pressed={selected}
       aria-hidden={shown ? undefined : true}
       aria-label={
-        poem.altText
-          ? `${poem.title}, ${poem.mood}. ${poem.altText}`
-          : `${poem.title}, ${poem.mood} poem`
+        [
+          poem.altText
+            ? `${poem.title}, ${poem.mood}. ${poem.altText}`
+            : `${poem.title}, ${poem.mood} poem`,
+          matched === true ? "Matches the search." : "",
+          matched === false ? "Not in this search." : "",
+        ]
+          .filter(Boolean)
+          .join(" ")
       }
       tabIndex={shown ? 0 : -1}
       style={style}
