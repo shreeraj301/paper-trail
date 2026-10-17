@@ -1,5 +1,4 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
-import { getRequest } from "@tanstack/react-start/server";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { QuietState } from "@/components/wall/QuietState";
 import appCss from "../styles.css?url";
@@ -25,16 +24,7 @@ function publicAppHost(hostHeader: string | undefined): string {
 }
 
 function shareHost(): string {
-  const fromEnv = publicAppHost(import.meta.env.VITE_PUBLIC_HOSTNAME);
-  if (fromEnv) return fromEnv;
-  if (!import.meta.env.SSR) return "";
-  try {
-    const request = getRequest();
-    const forwarded = request.headers.get("x-forwarded-host") ?? "";
-    return publicAppHost(forwarded) || publicAppHost(request.headers.get("host") ?? "");
-  } catch {
-    return "";
-  }
+  return publicAppHost(import.meta.env.VITE_PUBLIC_HOSTNAME);
 }
 
 export const Route = createRootRoute({
