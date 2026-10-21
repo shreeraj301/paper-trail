@@ -494,9 +494,6 @@ export function WallPage() {
         />
         <MoodFilter mood={session.mood} onChange={chooseMood} />
         <div className="actions">
-          <Link to="/case-study" className="text-btn study-link">
-            Study
-          </Link>
           <Tip label="Shuffle notes">
             <button type="button" className="text-btn" aria-label="Shuffle notes" onClick={shuffle}>
               <Shuffle aria-hidden="true" strokeWidth={1.75} />

@@ -10,17 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as CaseStudyRouteImport } from './routes/case-study'
 import { Route as PoemSlugRouteImport } from './routes/poem.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CaseStudyRoute = CaseStudyRouteImport.update({
-  id: '/case-study',
-  path: '/case-study',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PoemSlugRoute = PoemSlugRouteImport.update({
@@ -31,31 +25,27 @@ const PoemSlugRoute = PoemSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/case-study': typeof CaseStudyRoute
   '/poem/$slug': typeof PoemSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/case-study': typeof CaseStudyRoute
   '/poem/$slug': typeof PoemSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/case-study': typeof CaseStudyRoute
   '/poem/$slug': typeof PoemSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/case-study' | '/poem/$slug'
+  fullPaths: '/' | '/poem/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/case-study' | '/poem/$slug'
-  id: '__root__' | '/' | '/case-study' | '/poem/$slug'
+  to: '/' | '/poem/$slug'
+  id: '__root__' | '/' | '/poem/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CaseStudyRoute: typeof CaseStudyRoute
   PoemSlugRoute: typeof PoemSlugRoute
 }
 
@@ -66,13 +56,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/case-study': {
-      id: '/case-study'
-      path: '/case-study'
-      fullPath: '/case-study'
-      preLoaderRoute: typeof CaseStudyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/poem/$slug': {
@@ -87,7 +70,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CaseStudyRoute: CaseStudyRoute,
   PoemSlugRoute: PoemSlugRoute,
 }
 export const routeTree = rootRouteImport
